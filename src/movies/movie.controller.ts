@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 
 import { MovieService } from './movie.service';
+import { Genre } from '../genres/genre.model';
 
 @Controller('movie')
 export class MovieController {
@@ -18,8 +19,8 @@ export class MovieController {
   async addMovie(
     @Body('title') movieTitle: string,
     @Body('description') movieDesc: string,
-    @Body('releaseDate') movieReleaseDate: Date,
-    @Body('genre') movieGenre: Array<string>,
+    @Body('releaseDate') movieReleaseDate: string,
+    @Body('genre') movieGenre: string[],
   ) {
     const generatedId = await this.movieService.insertMovie(
       movieTitle,
@@ -47,7 +48,7 @@ export class MovieController {
     @Body('title') movieTitle: string,
     @Body('description') movieDesc: string,
     @Body('releaseDate') movieReleaseDate: Date,
-    @Body('genre') movieGenre: Array<string>,
+    @Body('genre') movieGenre: string[],
   ) {
     await this.movieService.updateMovie(
       movieId,
@@ -60,7 +61,7 @@ export class MovieController {
   }
 
   @Delete(':id')
-  async removeMoviet(@Param('id') movieId: string) {
+  async removeMovie(@Param('id') movieId: string) {
     await this.movieService.deleteMovie(movieId);
     return null;
   }

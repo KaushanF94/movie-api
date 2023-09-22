@@ -1,25 +1,48 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
 import { Movie } from './movie.model';
-
+import { Genre } from '../genres/genre.model';
+import { GenreService } from '../genres/genre.service';
 @Injectable()
 export class MovieService {
+  private genreService: GenreService;
   constructor(
     @InjectModel('Movie') private readonly movieModel: Model<Movie>,
-  ) {}
+    @InjectModel('Genre') private genreModel: Model<Genre>,
+    private moduleRef: ModuleRef,
+  ) {
+    this.genreService = this.moduleRef.get(GenreService, { strict: false });
+  }
 
   async insertMovie(
     title: string,
     desc: string,
-    releaseDate: Date,
-    genres: Array<string>,
+    releaseDate: string,
+    genres: string[],
   ) {
+    this.genreService = new GenreService(this.genreModel);
+    const existingGenres = await this.genreService.getGenres();
+
+    const nonExistingGenres = genres.filter(genre => {
+      return !existingGenres.some(
+        existingGenre => existingGenre.name === genre,
+      );
+    });
+
+    if (nonExistingGenres.length > 0) {
+      // Add non-existing genres to the Genre collection
+      for (const genreName of nonExistingGenres) {
+        await this.genreService.insertGenre(genreName);
+      }
+    }
+
     const newMovie = new this.movieModel({
       title,
       description: desc,
-      releaseDate,
+      releaseDate: new Date(releaseDate),
       genres,
     });
     const result = await newMovie.save();
@@ -53,7 +76,7 @@ export class MovieService {
     title: string,
     desc: string,
     releaseDate: Date,
-    genres: Array<string>,
+    genres: string[],
   ) {
     const updatedMovie = await this.findMovie(movieId);
     if (title) {
