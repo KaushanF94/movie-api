@@ -9,6 +9,7 @@ This is a simple REST API for managing movies and genres, built with NestJS and 
 - [Implemented Functionalities](#implemented-functionalities)
 - [API Endpoints](#api-endpoints)
 - [Usage](#usage)
+- [Contributing](#contributing)
 - [License](#license)
 
 ## Prerequisites
@@ -63,6 +64,10 @@ This API provides the following functionalities:
 - Delete a genre (removes it from movies too)
 - Search movies by title or genre
 
+Additionally, it includes the following middleware:
+
+- Request Logging Middleware: Logs incoming requests, including method and URL.
+
 ## API Endpoints
 
 - GET /movies: List all movies
@@ -91,6 +96,18 @@ Content-Type: application/json
   "genres": ["Action", "Adventure"]
 }
 ```
+
+## Contributing
+
+Contributions to this project are welcome! To contribute, follow these steps:
+
+- Fork the repository.
+- Create a new branch for your feature or bug fix.
+- Make your changes and commit them.
+- Push your changes to your fork.
+- Create a pull request to the original repository.
+
+Please ensure that your code follows best practices and includes tests if applicable.
 
 ## License
 
