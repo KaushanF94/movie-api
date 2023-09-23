@@ -9,57 +9,42 @@ import {
 } from '@nestjs/common';
 
 import { MovieService } from './movie.service';
-import { Genre } from '../genres/genre.model';
+import { CreateMovieDto, UpdateMovieDto } from './movie.dto';
 
 @Controller('movie')
 export class MovieController {
   constructor(private readonly movieService: MovieService) {}
 
+  // Create a new movie
   @Post()
-  async addMovie(
-    @Body('title') movieTitle: string,
-    @Body('description') movieDesc: string,
-    @Body('releaseDate') movieReleaseDate: string,
-    @Body('genre') movieGenre: string[],
-  ) {
-    const generatedId = await this.movieService.insertMovie(
-      movieTitle,
-      movieDesc,
-      movieReleaseDate,
-      movieGenre,
-    );
+  async addMovie(@Body() createMovieDto: CreateMovieDto) {
+    const generatedId = await this.movieService.insertMovie(createMovieDto);
     return { id: generatedId };
   }
 
+  // Get a list of all movies
   @Get()
   async getAllMovies() {
-    const movies = await this.movieService.getMovies();
-    return movies;
+    return await this.movieService.getMovies();
   }
 
+  // Get a movie by title, or genre
   @Get(':id')
-  getMovie(@Param('id') movieId: string) {
-    return this.movieService.getSingleMovie(movieId);
+  getMovie(@Param('id') query: string) {
+    return this.movieService.getMovieByTitleOrGenre(query);
   }
 
+  // Update a movie by ID
   @Patch(':id')
   async updateMovie(
     @Param('id') movieId: string,
-    @Body('title') movieTitle: string,
-    @Body('description') movieDesc: string,
-    @Body('releaseDate') movieReleaseDate: Date,
-    @Body('genre') movieGenre: string[],
+    @Body() updateMovieDto: UpdateMovieDto,
   ) {
-    await this.movieService.updateMovie(
-      movieId,
-      movieTitle,
-      movieDesc,
-      movieReleaseDate,
-      movieGenre,
-    );
+    await this.movieService.updateMovie(movieId, updateMovieDto);
     return null;
   }
 
+  // Delete a movie by ID
   @Delete(':id')
   async removeMovie(@Param('id') movieId: string) {
     await this.movieService.deleteMovie(movieId);

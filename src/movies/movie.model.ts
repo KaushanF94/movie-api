@@ -6,7 +6,11 @@ export const MovieSchema = new mongoose.Schema(
     title: { type: String, required: true },
     description: { type: String, required: true },
     releaseDate: { type: Date, required: true },
-    genres: { type: [], required: true, ref: 'Genre' },
+    genres: {
+      type: [String],
+      required: true,
+      ref: 'Genre',
+    },
   },
   { collection: 'movies' },
 );

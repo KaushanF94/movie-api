@@ -2,10 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-
 import { Movie } from './movie.model';
 import { Genre } from '../genres/genre.model';
 import { GenreService } from '../genres/genre.service';
+import { CreateMovieDto, UpdateMovieDto } from './movie.dto';
+
 @Injectable()
 export class MovieService {
   private genreService: GenreService;
@@ -14,19 +15,23 @@ export class MovieService {
     @InjectModel('Genre') private genreModel: Model<Genre>,
     private moduleRef: ModuleRef,
   ) {
+    // Initialize the genreService using the ModuleRef
     this.genreService = this.moduleRef.get(GenreService, { strict: false });
   }
 
-  async insertMovie(
-    title: string,
-    desc: string,
-    releaseDate: string,
-    genres: string[],
-  ) {
-    this.genreService = new GenreService(this.genreModel);
+  // Create a new movie, adding non-existing genres if necessary
+  async insertMovie(createMovieDto: CreateMovieDto) {
+    this.genreService = new GenreService(
+      this.genreModel,
+      this.movieModel,
+      this.moduleRef,
+    );
+
+    // Get existing genres from the genre service
     const existingGenres = await this.genreService.getGenres();
 
-    const nonExistingGenres = genres.filter(genre => {
+    // Find genres that don't exist in the database
+    const nonExistingGenres = createMovieDto.genres.filter(genre => {
       return !existingGenres.some(
         existingGenre => existingGenre.name === genre,
       );
@@ -35,82 +40,65 @@ export class MovieService {
     if (nonExistingGenres.length > 0) {
       // Add non-existing genres to the Genre collection
       for (const genreName of nonExistingGenres) {
-        await this.genreService.insertGenre(genreName);
+        await this.genreService.insertGenre({ name: genreName });
       }
     }
 
-    const newMovie = new this.movieModel({
-      title,
-      description: desc,
-      releaseDate: new Date(releaseDate),
-      genres,
-    });
+    // Create and save the new movie
+    const newMovie = new this.movieModel(createMovieDto);
     const result = await newMovie.save();
     return result.id as string;
   }
 
+  // Get a list of all movies
   async getMovies() {
-    const movies = await this.movieModel.find().exec();
-    return movies.map(movie => ({
-      id: movie.id,
-      title: movie.title,
-      description: movie.description,
-      releaseDate: movie.releaseDate,
-      genres: movie.genres,
-    }));
+    return await this.movieModel.find().exec();
   }
 
-  async getSingleMovie(title: string) {
-    const movie = await this.findMovie(title);
-    return {
-      id: movie.id,
-      title: movie.title,
-      description: movie.description,
-      releaseDate: movie.releaseDate,
-      genres: movie.genres,
-    };
-  }
-
-  async updateMovie(
-    movieId: string,
-    title: string,
-    desc: string,
-    releaseDate: Date,
-    genres: string[],
-  ) {
-    const updatedMovie = await this.findMovie(movieId);
-    if (title) {
-      updatedMovie.title = title;
-    }
-    if (desc) {
-      updatedMovie.description = desc;
-    }
-    if (releaseDate) {
-      updatedMovie.releaseDate = releaseDate;
-    }
-    if (genres) {
-      updatedMovie.genres = genres;
-    }
-    updatedMovie.save();
-  }
-
-  async deleteMovie(movieId: string) {
-    const result = await this.movieModel.deleteOne({ _id: movieId }).exec();
-    if (result.n === 0) {
-      throw new NotFoundException('Could not find movie.');
-    }
-  }
-
-  private async findMovie(title: string): Promise<Movie> {
-    let movie: Movie;
+  // Get movies by title or genre
+  async getMovieByTitleOrGenre(query: string): Promise<Movie[]> {
     try {
-      movie = await this.movieModel.findById(title).exec();
+      let movies: Movie[];
+      movies = await this.movieModel
+        .find({
+          $or: [
+            { title: { $regex: query, $options: 'i' } }, // Case-insensitive title search
+            { genres: { $in: [query] } }, // Genre search
+          ],
+        })
+        .exec();
+
+      if (!movies || movies.length === 0) {
+        throw new NotFoundException(
+          'No movies found with the provided title or genre.',
+        );
+      }
+
+      return movies;
     } catch (error) {
       throw new NotFoundException('Could not find movie.');
     }
-    if (!movie) {
-      throw new NotFoundException('Could not find movie.');
+  }
+
+  // Update a movie by ID
+  async updateMovie(movieId: string, updateMovieDto: UpdateMovieDto) {
+    const updatedMovie = await this.movieModel.findByIdAndUpdate(
+      movieId,
+      updateMovieDto,
+      { new: true },
+    );
+    if (!updatedMovie) {
+      throw new NotFoundException('Movie not found');
     }
-    return movie;
+    return updatedMovie;
+  }
+
+  // Delete a movie by ID
+  async deleteMovie(movieId: string) {
+    const deletedMovie = await this.movieModel.findByIdAndRemove(movieId);
+    if (!deletedMovie) {
+      throw new NotFoundException('Movie not found');
+    }
+    return deletedMovie;
   }
 }
