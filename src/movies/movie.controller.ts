@@ -6,12 +6,13 @@ import {
   Param,
   Patch,
   Delete,
+  Query,
 } from '@nestjs/common';
 
 import { MovieService } from './movie.service';
 import { CreateMovieDto, UpdateMovieDto } from './movie.dto';
 
-@Controller('movie')
+@Controller('movies')
 export class MovieController {
   constructor(private readonly movieService: MovieService) {}
 
@@ -22,10 +23,13 @@ export class MovieController {
     return { id: generatedId };
   }
 
-  // Get a list of all movies
+  // Get a list of all movies paginated
   @Get()
-  async getAllMovies() {
-    return await this.movieService.getMovies();
+  async getAllMovies(
+    @Query('page') page: number = 1, // Default to page 1
+    @Query('limit') limit: string = '10', // Default to 10 items per page
+  ) {
+    return this.movieService.getMoviesPaginated(page, limit);
   }
 
   // Get a movie by title, or genre

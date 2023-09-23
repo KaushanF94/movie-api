@@ -64,13 +64,14 @@ This API provides the following functionalities:
 - Delete a genre (removes it from movies too)
 - Search movies by title or genre
 
-Additionally, it includes the following middleware:
+Additionally, it includes the following features:
 
 - Request Logging Middleware: Logs incoming requests, including method and URL.
+- Paginated list of movies: you can simply pass page number and limit in the request to get the paginated list of movies.
 
 ## API Endpoints
 
-- GET /movies: List all movies
+- GET /movies?page=1&limit=10: List all movies paginated
 - POST /movies: Add a new movie
 - PATCH /movies/:id: Update an existing movie
 - DELETE /movies/:id: Delete a movie

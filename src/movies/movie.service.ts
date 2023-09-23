@@ -50,9 +50,14 @@ export class MovieService {
     return result.id as string;
   }
 
-  // Get a list of all movies
-  async getMovies() {
-    return await this.movieModel.find().exec();
+  async getMoviesPaginated(page: number, limit: string) {
+    // Calculate the skip value based on the page and limit
+    const skip = (page - 1) * parseInt(limit);
+    return await this.movieModel
+      .find()
+      .skip(skip)
+      .limit(parseInt(limit))
+      .exec();
   }
 
   // Get movies by title or genre
